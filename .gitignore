@@ -1,0 +1,16 @@
+# OS / tooling
+.DS_Store
+Thumbs.db
+launcher.log
+
+# Editors
+.vscode/
+.idea/
+
+# Node / Python (if you run a local server or add tooling later)
+node_modules/
+dist/
+build/
+__pycache__/
+.python-version
+

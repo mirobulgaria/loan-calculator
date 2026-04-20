@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="bg">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Кредитен калкулатор</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header class="header">
+        <div class="header-top">
+          <h1 class="title" data-i18n="app.title">Кредитен калкулатор</h1>
+          <div class="lang-switch" role="group" aria-label="Language switch">
+            <button id="lang-en" type="button" class="lang-btn" aria-pressed="false">EN</button>
+            <button id="lang-bg" type="button" class="lang-btn" aria-pressed="true">BG</button>
+          </div>
+        </div>
+        <p class="subtitle" data-i18n="app.subtitle">
+          Въведете сума на кредита, годишна лихва и срок (в месеци), за да получите месечната вноска и пълен план по месеци.
+        </p>
+      </header>
+
+      <section class="card" aria-label="Входни данни за кредита">
+        <form id="loan-form" class="form" autocomplete="off">
+          <div class="field">
+            <label for="amount" data-i18n="form.amount.label">Сума на кредита</label>
+            <input
+              id="amount"
+              name="amount"
+              type="number"
+              inputmode="decimal"
+              min="0"
+              step="0.01"
+              placeholder="напр. 10000"
+              required
+            />
+          </div>
+
+          <div class="field">
+            <label for="interest" data-i18n="form.interest.label">Лихва (годишна %)</label>
+            <input
+              id="interest"
+              name="interest"
+              type="number"
+              inputmode="decimal"
+              min="0"
+              step="0.01"
+              placeholder="напр. 6.5"
+              required
+            />
+          </div>
+
+          <div class="field">
+            <label for="period" data-i18n="form.period.label">Срок (месеци)</label>
+            <input
+              id="period"
+              name="period"
+              type="number"
+              inputmode="numeric"
+              min="1"
+              step="1"
+              placeholder="напр. 36"
+              required
+            />
+          </div>
+
+          <div class="field">
+            <label for="extra" data-i18n="form.extra.label">Допълнително плащане (месечно)</label>
+            <input
+              id="extra"
+              name="extra"
+              type="number"
+              inputmode="decimal"
+              min="0"
+              step="0.01"
+              placeholder="напр. 50"
+              value="0"
+            />
+          </div>
+
+          <div class="field">
+            <label for="extra-yearly" data-i18n="form.extraYearly.label">Допълнително плащане (годишно)</label>
+            <input
+              id="extra-yearly"
+              name="extra-yearly"
+              type="number"
+              inputmode="decimal"
+              min="0"
+              step="0.01"
+              placeholder="напр. 500"
+              value="0"
+            />
+          </div>
+
+          <div class="field">
+            <label for="extra-once" data-i18n="form.extraOnce.label">Еднократно допълнително плащане</label>
+            <input
+              id="extra-once"
+              name="extra-once"
+              type="number"
+              inputmode="decimal"
+              min="0"
+              step="0.01"
+              placeholder="напр. 1000"
+              value="0"
+            />
+          </div>
+
+          <div class="field">
+            <label for="extra-once-month" data-i18n="form.extraOnceMonth.label">Месец за еднократно плащане</label>
+            <input
+              id="extra-once-month"
+              name="extra-once-month"
+              type="number"
+              inputmode="numeric"
+              min="1"
+              step="1"
+              placeholder="напр. 6"
+              value="12"
+            />
+          </div>
+
+          <div class="actions">
+            <button id="calculate" type="submit" data-i18n="form.calculate">Изчисли</button>
+            <button id="reset" type="button" class="secondary" data-i18n="form.reset">Нулирай</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="card" aria-label="Резултати за кредита">
+        <div class="results">
+          <div class="result">
+            <div class="result-label" data-i18n="results.baseMonthly">Месечна вноска (базова)</div>
+            <div class="result-value" id="monthly-payment">—</div>
+          </div>
+          <div class="result">
+            <div class="result-label" data-i18n="results.payoffMonths">Срок до изплащане (месеци)</div>
+            <div class="result-value" id="payoff-months">—</div>
+          </div>
+          <div class="result">
+            <div class="result-label" data-i18n="results.withExtra">Месечно плащане (с допълнение)</div>
+            <div class="result-value" id="monthly-with-extra">—</div>
+          </div>
+          <div class="result">
+            <div class="result-label" data-i18n="results.totalPaid">Общо платено</div>
+            <div class="result-value" id="total-paid">—</div>
+          </div>
+          <div class="result">
+            <div class="result-label" data-i18n="results.totalInterest">Общо лихва</div>
+            <div class="result-value" id="total-interest">—</div>
+          </div>
+        </div>
+
+        <div class="hint" id="error" role="alert" aria-live="polite"></div>
+      </section>
+
+      <section class="card" aria-label="Месечен план">
+        <div class="table-header">
+          <h2 class="section-title" data-i18n="plan.title">Погасителен план (по месеци)</h2>
+          <button id="download-csv" type="button" class="secondary" disabled data-i18n="plan.downloadCsv">Изтегли CSV</button>
+        </div>
+
+        <div class="table-wrap" role="region" aria-label="Погасителен план" tabindex="0">
+          <table class="table" id="plan-table">
+            <thead>
+              <tr>
+                <th data-i18n="plan.col.month">Месец</th>
+                <th data-i18n="plan.col.payment">Вноска</th>
+                <th data-i18n="plan.col.interest">Лихва</th>
+                <th data-i18n="plan.col.principal">Главница</th>
+                <th data-i18n="plan.col.balance">Остатък</th>
+              </tr>
+            </thead>
+            <tbody id="plan-body">
+              <tr>
+                <td colspan="5" class="empty" data-i18n="plan.empty">Попълнете данните и натиснете „Изчисли“.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <script src="./app.js" defer></script>
+  </body>
+</html>
