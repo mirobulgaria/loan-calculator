@@ -251,11 +251,23 @@ function buildSchedule(amount, annualRatePercent, months, extraMonthlyPayment, e
   };
 }
 
+function escapeCSV(value) {
+  const s = String(value);
+  if (/[",\n]/.test(s)) return `"${s.replaceAll("\"", "\"\"")}"`;
+  return s;
+}
+
 function toCSV(schedule) {
-  const header = ["Month", "Payment", "Interest", "Principal", "Balance"];
-  const lines = [header.join(",")];
+  const header = [
+    t("plan.col.month"),
+    t("plan.col.payment"),
+    t("plan.col.interest"),
+    t("plan.col.principal"),
+    t("plan.col.balance"),
+  ];
+  const lines = [header.map(escapeCSV).join(",")];
   for (const r of schedule) {
-    lines.push([r.month, r.payment, r.interest, r.principal, r.balance].join(","));
+    lines.push([r.month, r.payment, r.interest, r.principal, r.balance].map(escapeCSV).join(","));
   }
   return lines.join("\n");
 }
