@@ -53,3 +53,4 @@ powershell -ExecutionPolicy Bypass -File .\start.ps1
 - Последният месец се коригира, за да се занули остатъкът (за да няма разлика от закръгляния).
 
 # loan-calculator
+# loan-calculator
