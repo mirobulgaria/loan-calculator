@@ -345,6 +345,21 @@ function clearOutputs() {
   tbody.innerHTML = `<tr><td colspan="5" class="empty">${t("plan.empty")}</td></tr>`;
 }
 
+function resetInputs() {
+  const set = (id, value) => {
+    const el = document.getElementById(id);
+    if (el) el.value = value;
+  };
+
+  set("amount", "");
+  set("interest", "");
+  set("period", "");
+  set("extra", "0");
+  set("extra-yearly", "0");
+  set("extra-once", "0");
+  set("extra-once-month", "12");
+}
+
 let lastSchedule = null;
 
 function calculateAndRender() {
@@ -379,7 +394,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   resetBtn.addEventListener("click", () => {
-    form.reset();
+    resetInputs();
     lastSchedule = null;
     setError("");
     clearOutputs();
@@ -409,6 +424,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   applyTranslations();
+  resetInputs();
   clearOutputs();
 });
 
