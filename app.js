@@ -32,6 +32,7 @@ const I18N = {
     "results.totalInterest": "Total interest",
     "plan.title": "Payment plan (monthly)",
     "plan.downloadCsv": "Download CSV",
+    "plan.downloadPdf": "Download PDF",
     "plan.col.month": "Month",
     "plan.col.payment": "Payment",
     "plan.col.interest": "Interest",
@@ -47,7 +48,9 @@ const I18N = {
     "error.extraOnceMonth": "Please enter a valid month number for the one-time payment (1 or greater).",
     "error.paymentTooSmall":
       "Your monthly payment (base + extra) is not enough to cover the monthly interest. Increase the period or add a bigger extra payment.",
+    "error.pdfLib": "PDF export library is not loaded. Please check your internet connection and reload the page.",
     "csv.filename": "loan-plan.csv",
+    "pdf.filename": "loan-plan.pdf",
   },
   bg: {
     "app.title": "Кредитен калкулатор",
@@ -76,6 +79,7 @@ const I18N = {
     "results.totalInterest": "Общо лихва",
     "plan.title": "Погасителен план (по месеци)",
     "plan.downloadCsv": "Изтегли CSV",
+    "plan.downloadPdf": "Изтегли PDF",
     "plan.col.month": "Месец",
     "plan.col.payment": "Вноска",
     "plan.col.interest": "Лихва",
@@ -91,7 +95,9 @@ const I18N = {
     "error.extraOnceMonth": "Моля, въведете валиден номер на месец за еднократното плащане (1 или повече).",
     "error.paymentTooSmall":
       "Месечното ви плащане (базово + допълнително) не е достатъчно, за да покрие месечната лихва. Увеличете срока или добавете по-голямо допълнително плащане.",
+    "error.pdfLib": "Библиотеката за PDF експорт не е заредена. Проверете интернет връзката и презаредете страницата.",
     "csv.filename": "pogasnitelen-plan.csv",
+    "pdf.filename": "pogasnitelen-plan.pdf",
   },
 };
 
@@ -284,6 +290,17 @@ function downloadText(filename, text) {
   URL.revokeObjectURL(url);
 }
 
+function downloadBlob(filename, blob) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
 function setError(message) {
   const el = document.getElementById("error");
   el.textContent = message ?? "";
@@ -341,6 +358,7 @@ function clearOutputs() {
   document.getElementById("total-paid").textContent = "—";
   document.getElementById("total-interest").textContent = "—";
   document.getElementById("download-csv").disabled = true;
+  document.getElementById("download-pdf").disabled = true;
   const tbody = document.getElementById("plan-body");
   tbody.innerHTML = `<tr><td colspan="5" class="empty">${t("plan.empty")}</td></tr>`;
 }
@@ -360,7 +378,77 @@ function resetInputs() {
   set("extra-once-month", "12");
 }
 
-let lastSchedule = null;
+let lastResult = null;
+
+function exportPDF(result) {
+  const pdfMake = window.pdfMake;
+  if (!pdfMake) {
+    setError(t("error.pdfLib"));
+    return;
+  }
+
+  const headerRow = [
+    t("plan.col.month"),
+    t("plan.col.payment"),
+    t("plan.col.interest"),
+    t("plan.col.principal"),
+    t("plan.col.balance"),
+  ];
+
+  const bodyRows = result.schedule.map((r) => ([
+    String(r.month),
+    formatMoney(r.payment),
+    formatMoney(r.interest),
+    formatMoney(r.principal),
+    formatMoney(r.balance),
+  ]));
+
+  const docDefinition = {
+    pageSize: "A4",
+    pageMargins: [40, 40, 40, 40],
+    defaultStyle: { font: "Roboto", fontSize: 10 },
+    content: [
+      { text: t("app.title"), style: "title" },
+      {
+        columns: [
+          {
+            width: "*",
+            stack: [
+              { text: `${t("results.baseMonthly")}: ${formatMoney(result.baseMonthlyPayment)}` },
+              { text: `${t("results.withExtra")}: ${formatMoney(result.monthlyWithExtra)}` },
+              { text: `${t("results.payoffMonths")}: ${result.payoffMonths}` },
+            ],
+          },
+          {
+            width: "*",
+            stack: [
+              { text: `${t("results.totalPaid")}: ${formatMoney(result.totalPaid)}` },
+              { text: `${t("results.totalInterest")}: ${formatMoney(result.totalInterest)}` },
+            ],
+          },
+        ],
+        columnGap: 14,
+        margin: [0, 8, 0, 14],
+      },
+      { text: t("plan.title"), style: "sectionTitle", margin: [0, 0, 0, 8] },
+      {
+        table: {
+          headerRows: 1,
+          widths: ["auto", "auto", "auto", "auto", "*"],
+          body: [headerRow, ...bodyRows],
+        },
+        layout: "lightHorizontalLines",
+        fontSize: 9,
+      },
+    ],
+    styles: {
+      title: { fontSize: 16, bold: true, margin: [0, 0, 0, 8] },
+      sectionTitle: { fontSize: 12, bold: true },
+    },
+  };
+
+  pdfMake.createPdf(docDefinition).download(t("pdf.filename"));
+}
 
 function calculateAndRender() {
   setError("");
@@ -377,14 +465,16 @@ function calculateAndRender() {
   }
   setSummary(result);
   renderTable(result.schedule);
-  lastSchedule = result.schedule;
+  lastResult = result;
   document.getElementById("download-csv").disabled = false;
+  document.getElementById("download-pdf").disabled = false;
 }
 
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("loan-form");
   const resetBtn = document.getElementById("reset");
   const dlBtn = document.getElementById("download-csv");
+  const pdfBtn = document.getElementById("download-pdf");
   const btnEn = document.getElementById("lang-en");
   const btnBg = document.getElementById("lang-bg");
 
@@ -395,22 +485,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
   resetBtn.addEventListener("click", () => {
     resetInputs();
-    lastSchedule = null;
+    lastResult = null;
     setError("");
     clearOutputs();
   });
 
   dlBtn.addEventListener("click", () => {
-    if (!lastSchedule) return;
-    downloadText(t("csv.filename"), toCSV(lastSchedule));
+    if (!lastResult) return;
+    downloadText(t("csv.filename"), toCSV(lastResult.schedule));
   });
+
+  if (pdfBtn) {
+    pdfBtn.addEventListener("click", () => {
+      if (!lastResult) return;
+      exportPDF(lastResult);
+    });
+  }
 
   if (btnEn) {
     btnEn.addEventListener("click", () => {
       setLanguage("en");
       applyTranslations();
       clearOutputs();
-      if (lastSchedule) calculateAndRender();
+      if (lastResult) calculateAndRender();
     });
   }
 
@@ -419,7 +516,7 @@ document.addEventListener("DOMContentLoaded", () => {
       setLanguage("bg");
       applyTranslations();
       clearOutputs();
-      if (lastSchedule) calculateAndRender();
+      if (lastResult) calculateAndRender();
     });
   }
 

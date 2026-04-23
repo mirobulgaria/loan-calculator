@@ -158,7 +158,10 @@
       <section class="card" aria-label="Месечен план">
         <div class="table-header">
           <h2 class="section-title" data-i18n="plan.title">Погасителен план (по месеци)</h2>
-          <button id="download-csv" type="button" class="secondary" disabled data-i18n="plan.downloadCsv">Изтегли CSV</button>
+          <div class="export-actions">
+            <button id="download-csv" type="button" class="secondary" disabled data-i18n="plan.downloadCsv">Изтегли CSV</button>
+            <button id="download-pdf" type="button" class="secondary" disabled data-i18n="plan.downloadPdf">Изтегли PDF</button>
+          </div>
         </div>
 
         <div class="table-wrap" role="region" aria-label="Погасителен план" tabindex="0">
@@ -182,6 +185,8 @@
       </section>
     </main>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.10/pdfmake.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.10/vfs_fonts.min.js" defer></script>
     <script src="./app.js" defer></script>
   </body>
 </html>
