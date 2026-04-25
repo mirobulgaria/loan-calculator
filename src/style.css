@@ -305,3 +305,158 @@ button.secondary{
     padding: 14px 12px;
   }
 }
+
+@media print {
+  /* ── FONTS & BASE ── */
+  * {
+    font-family: Arial, "Helvetica Neue", Helvetica, sans-serif !important;
+    box-sizing: border-box;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #111111 !important;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* ── HIDE: form, buttons, header controls, error, lang switch ── */
+  .card:has(#loan-form),
+  .table-header button,
+  .header-top .lang-switch,
+  .subtitle,
+  #error,
+  .hint {
+    display: none !important;
+  }
+
+  /* ── REMOVE all card chrome ── */
+  .card, .container {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    gap: 0 !important;
+    width: 100% !important;
+  }
+
+  /* ── TITLE ── */
+  .title {
+    font-size: 20pt !important;
+    font-weight: 700 !important;
+    color: #111111 !important;
+    margin: 0 0 16px 0 !important;
+    display: block !important;
+  }
+
+  .header {
+    padding: 0 0 12px 0 !important;
+    border-bottom: 2px solid #111111 !important;
+    margin-bottom: 14px !important;
+  }
+
+  /* ── SUMMARY: show as 2-column inline text grid ── */
+  .results {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 4px 32px !important;
+    margin-bottom: 20px !important;
+  }
+
+  .result {
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 2px 0 !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: baseline !important;
+    gap: 6px !important;
+  }
+
+  .result-label {
+    font-size: 10pt !important;
+    color: #333333 !important;
+    white-space: nowrap !important;
+  }
+
+  .result-label::after {
+    content: ":";
+  }
+
+  .result-value {
+    font-size: 10pt !important;
+    font-weight: 700 !important;
+    color: #111111 !important;
+    letter-spacing: 0 !important;
+    margin-top: 0 !important;
+  }
+
+  /* ── TABLE SECTION TITLE ── */
+  .section-title {
+    font-size: 14pt !important;
+    font-weight: 700 !important;
+    color: #111111 !important;
+    margin: 0 0 8px 0 !important;
+    display: block !important;
+  }
+
+  .table-header {
+    margin-bottom: 6px !important;
+  }
+
+  /* ── TABLE ── */
+  .table-wrap {
+    overflow: visible !important;
+    border: none !important;
+    background: transparent !important;
+    border-radius: 0 !important;
+  }
+
+  .table {
+    width: 100% !important;
+    min-width: unset !important;
+    border-collapse: collapse !important;
+    font-size: 10pt !important;
+  }
+
+  .table thead th {
+    position: static !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    color: #111111 !important;
+    font-size: 10pt !important;
+    font-weight: 700 !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+    border-bottom: 2px solid #111111 !important;
+    padding: 6px 8px !important;
+  }
+
+  .table th, .table td {
+    border-bottom: 1px solid #cccccc !important;
+    border-top: none !important;
+    border-left: none !important;
+    border-right: none !important;
+    padding: 5px 8px !important;
+    color: #111111 !important;
+    background: transparent !important;
+    text-align: right !important;
+    white-space: nowrap !important;
+  }
+
+  .table th:first-child,
+  .table td:first-child {
+    text-align: left !important;
+  }
+
+  /* ── PAGE BREAKS ── */
+  thead { display: table-header-group; }
+  tr    { page-break-inside: avoid; }
+}

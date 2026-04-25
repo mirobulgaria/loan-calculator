@@ -163,6 +163,7 @@
       <section class="card" aria-label="Месечен план">
         <div class="table-header">
           <h2 class="section-title" data-i18n="plan.title">Погасителен план (по месеци)</h2>
+          <button id="download-pdf" type="button" class="secondary" disabled data-i18n="plan.downloadPdf">Изтегли PDF</button>
           <button id="download-csv" type="button" class="secondary" disabled data-i18n="plan.downloadCsv">Изтегли CSV</button>
         </div>
 
@@ -187,6 +188,9 @@
       </section>
     </main>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/parallax/jsPDF@master/dist/jspdf.plugin.ttf.js"></script>
     <script src="src/app.js" defer></script>
   </body>
 </html>

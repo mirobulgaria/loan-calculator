@@ -32,6 +32,7 @@ const I18N = {
     "results.totalInterest": "Total interest",
     "plan.title": "Payment plan (monthly)",
     "plan.downloadCsv": "Download CSV",
+    "plan.downloadPdf": "Download PDF",
     "plan.col.month": "Month",
     "plan.col.payment": "Payment",
     "plan.col.interest": "Interest",
@@ -76,6 +77,7 @@ const I18N = {
     "results.totalInterest": "Общо лихва",
     "plan.title": "Погасителен план (по месеци)",
     "plan.downloadCsv": "Изтегли CSV",
+    "plan.downloadPdf": "Изтегли PDF",
     "plan.col.month": "Месец",
     "plan.col.payment": "Вноска",
     "plan.col.interest": "Лихва",
@@ -284,6 +286,188 @@ function downloadText(filename, text) {
   URL.revokeObjectURL(url);
 }
 
+function downloadPDF() {
+  if (!lastSchedule || lastSchedule.length === 0) return;
+  
+  // Check if jsPDF is available
+  if (typeof window.jspdf === 'undefined') {
+    console.error('jsPDF library not loaded');
+    return;
+  }
+  
+  // Get the current language
+  const currentLang = document.documentElement.lang || 'bg';
+  const isEn = currentLang === 'en';
+  
+  // Initialize jsPDF
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  
+  // For Bulgarian, use a different approach - create HTML and convert to PDF
+  if (!isEn) {
+    // Create HTML content with proper UTF-8 encoding
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html lang="bg">
+      <head>
+        <meta charset="UTF-8">
+        <title>Погасителен план</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          h1 { text-align: center; font-size: 18pt; }
+          .summary { margin: 20px 0; }
+          .summary-row { display: flex; justify-content: space-between; margin: 5px 0; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          th, td { border: 1px solid #ccc; padding: 8px; text-align: right; }
+          th:first-child, td:first-child { text-align: left; }
+          th { background: #f0f0f0; font-weight: bold; }
+        </style>
+      </head>
+      <body>
+        <h1>Погасителен план</h1>
+        <div class="summary">
+          ${(() => {
+            let totalPaid = 0, totalInterest = 0;
+            lastSchedule.forEach(row => {
+              totalPaid += (row.payment || 0);
+              totalInterest += (row.interest || 0);
+            });
+            return `
+              <div class="summary-row">
+                <span>Общо платено:</span>
+                <span>${totalPaid.toFixed(2)}</span>
+              </div>
+              <div class="summary-row">
+                <span>Общо лихва:</span>
+                <span>${totalInterest.toFixed(2)}</span>
+              </div>
+              <div class="summary-row">
+                <span>Срок до изплащане:</span>
+                <span>${lastSchedule.length} месеца</span>
+              </div>
+            `;
+          })()}
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Месец</th>
+              <th>Вноска</th>
+              <th>Лихва</th>
+              <th>Главница</th>
+              <th>Остатък</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${lastSchedule.map(row => `
+              <tr>
+                <td>${row.month}</td>
+                <td>${(row.payment || 0).toFixed(2)}</td>
+                <td>${(row.interest || 0).toFixed(2)}</td>
+                <td>${(row.principal || 0).toFixed(2)}</td>
+                <td>${(row.balance || 0).toFixed(2)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </body>
+      </html>
+    `;
+    
+    // Create blob and download HTML file
+    const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'pogasnitelen-plan.html';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    
+    // Show message to user
+    setTimeout(() => {
+      alert('Моля, отворете изтегления HTML файл и използвайте "Print to PDF" или "Save as PDF" в браузъра си, за да запазите като PDF.');
+    }, 100);
+    
+    return;
+  }
+  
+  // English PDF generation (works fine)
+  doc.setFontSize(16);
+  doc.text('Payment Plan', 105, 20, { align: 'center' });
+  
+  // Calculate totals
+  let totalPaid = 0, totalInterest = 0;
+  lastSchedule.forEach(row => {
+    totalPaid += (row.payment || 0);
+    totalInterest += (row.interest || 0);
+  });
+  
+  // Add summary
+  doc.setFontSize(12);
+  const summaryData = [
+    ['Total Paid:', totalPaid.toFixed(2)],
+    ['Total Interest:', totalInterest.toFixed(2)],
+    ['Payoff Months:', `${lastSchedule.length} months`]
+  ];
+  
+  let yPosition = 40;
+  summaryData.forEach(([label, value]) => {
+    doc.text(label, 20, yPosition);
+    doc.text(value, 150, yPosition, { align: 'right' });
+    yPosition += 10;
+  });
+  
+  // Add table
+  yPosition += 10;
+  doc.setFontSize(10);
+  doc.setFont(undefined, 'bold');
+  
+  const headers = ['Month', 'Payment', 'Interest', 'Principal', 'Balance'];
+  const columnWidths = [30, 35, 35, 35, 35];
+  const startX = 20;
+  
+  headers.forEach((header, index) => {
+    const x = startX + columnWidths.slice(0, index).reduce((a, b) => a + b, 0);
+    doc.text(header, x, yPosition);
+  });
+  
+  yPosition += 7;
+  doc.setFont(undefined, 'normal');
+  
+  lastSchedule.forEach((row) => {
+    if (yPosition > 270) {
+      doc.addPage();
+      yPosition = 20;
+      doc.setFont(undefined, 'bold');
+      headers.forEach((header, headerIndex) => {
+        const x = startX + columnWidths.slice(0, headerIndex).reduce((a, b) => a + b, 0);
+        doc.text(header, x, yPosition);
+      });
+      yPosition += 7;
+      doc.setFont(undefined, 'normal');
+    }
+    
+    const rowData = [
+      row.month.toString(),
+      (row.payment || 0).toFixed(2),
+      (row.interest || 0).toFixed(2),
+      (row.principal || 0).toFixed(2),
+      (row.balance || 0).toFixed(2)
+    ];
+    
+    rowData.forEach((data, dataIndex) => {
+      const x = startX + columnWidths.slice(0, dataIndex).reduce((a, b) => a + b, 0);
+      doc.text(data, x, yPosition);
+    });
+    
+    yPosition += 7;
+  });
+  
+  doc.save('payment-plan.pdf');
+}
+
 function setError(message) {
   const el = document.getElementById("error");
   el.textContent = message ?? "";
@@ -341,6 +525,8 @@ function clearOutputs() {
   document.getElementById("total-paid").textContent = "—";
   document.getElementById("total-interest").textContent = "—";
   document.getElementById("download-csv").disabled = true;
+  const pdfBtn = document.getElementById("download-pdf");
+  if (pdfBtn) pdfBtn.disabled = true;
   const tbody = document.getElementById("plan-body");
   tbody.innerHTML = `<tr><td colspan="5" class="empty">${t("plan.empty")}</td></tr>`;
 }
@@ -379,6 +565,8 @@ function calculateAndRender() {
   renderTable(result.schedule);
   lastSchedule = result.schedule;
   document.getElementById("download-csv").disabled = false;
+  const pdfBtn = document.getElementById("download-pdf");
+  if (pdfBtn) pdfBtn.disabled = false;
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -404,6 +592,14 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!lastSchedule) return;
     downloadText(t("csv.filename"), toCSV(lastSchedule));
   });
+
+  const pdfBtn = document.getElementById("download-pdf");
+  if (pdfBtn) {
+    pdfBtn.addEventListener("click", () => {
+      if (!lastSchedule) return;
+      downloadPDF();
+    });
+  }
 
   if (btnEn) {
     btnEn.addEventListener("click", () => {
