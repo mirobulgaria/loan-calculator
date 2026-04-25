@@ -319,24 +319,11 @@ function downloadPDF() {
   const leftLines = [
     t('results.baseMonthly')  + ': ' + document.getElementById('monthly-payment').textContent,
     t('results.withExtra')    + ': ' + document.getElementById('monthly-with-extra').textContent,
+    t('form.extra.label')     + ': ' + formatMoney(parsePositiveNumber(document.getElementById('extra').value) || 0),
+    t('form.extraYearly.label') + ': ' + formatMoney(parsePositiveNumber(document.getElementById('extra-yearly').value) || 0),
+    t('form.extraOnce.label') + ': ' + formatMoney(parsePositiveNumber(document.getElementById('extra-once').value) || 0),
+    t('results.payoffMonths') + ': ' + document.getElementById('payoff-months').textContent,
   ];
-
-  // Add extra payment fields only if they have values > 0
-  const extraMonthly = parseFloat(document.getElementById('extra').value) || 0;
-  const extraYearly = parseFloat(document.getElementById('extra-yearly').value) || 0;
-  const extraOnce = parseFloat(document.getElementById('extra-once').value) || 0;
-
-  if (extraMonthly > 0) {
-    leftLines.push(t('form.extra.label') + ': ' + formatMoney(extraMonthly));
-  }
-  if (extraYearly > 0) {
-    leftLines.push(t('form.extraYearly.label') + ': ' + formatMoney(extraYearly));
-  }
-  if (extraOnce > 0) {
-    leftLines.push(t('form.extraOnce.label') + ': ' + formatMoney(extraOnce));
-  }
-
-  leftLines.push(t('results.payoffMonths') + ': ' + document.getElementById('payoff-months').textContent);
 
   const rightLines = [
     t('results.totalPaid')     + ': ' + document.getElementById('total-paid').textContent,
