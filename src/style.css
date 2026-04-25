@@ -197,6 +197,11 @@ button.secondary{
   margin-bottom: 10px;
 }
 
+.button-group {
+  display: flex;
+  gap: 8px;
+}
+
 .section-title{
   margin: 0;
   font-size: 16px;
