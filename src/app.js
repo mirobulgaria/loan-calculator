@@ -312,41 +312,48 @@ function downloadPDF() {
   doc.line(margin, y + 3, 196, y + 3);
   y += 10;
 
-  // ── Summary: exactly matching reference layout ──
+  // ── Summary: 2-column layout matching reference ──
   doc.setFontSize(10);
+  doc.setFont('DejaVu', 'normal');
 
-  const rows = [
-    // [left label, left value, right label, right value]
-    // right label/value = null means empty right column
-    [t('results.baseMonthly'),  document.getElementById('monthly-payment').textContent,
-     t('results.payoffMonths'), document.getElementById('payoff-months').textContent],
-    [t('results.withExtra'),    document.getElementById('monthly-with-extra').textContent,
-     t('results.totalPaid'),    document.getElementById('total-paid').textContent],
-    [t('results.totalInterest'),document.getElementById('total-interest').textContent,
-     null, null],
+  const leftLines = [
+    t('results.baseMonthly')  + ': ' + document.getElementById('monthly-payment').textContent,
+    t('results.withExtra')    + ': ' + document.getElementById('monthly-with-extra').textContent,
   ];
 
-  const leftX = margin;
+  // Add extra payment fields only if they have values > 0
+  const extraMonthly = parseFloat(document.getElementById('extra').value) || 0;
+  const extraYearly = parseFloat(document.getElementById('extra-yearly').value) || 0;
+  const extraOnce = parseFloat(document.getElementById('extra-once').value) || 0;
+
+  if (extraMonthly > 0) {
+    leftLines.push(t('form.extra.label') + ': ' + formatMoney(extraMonthly));
+  }
+  if (extraYearly > 0) {
+    leftLines.push(t('form.extraYearly.label') + ': ' + formatMoney(extraYearly));
+  }
+  if (extraOnce > 0) {
+    leftLines.push(t('form.extraOnce.label') + ': ' + formatMoney(extraOnce));
+  }
+
+  leftLines.push(t('results.payoffMonths') + ': ' + document.getElementById('payoff-months').textContent);
+
+  const rightLines = [
+    t('results.totalPaid')     + ': ' + document.getElementById('total-paid').textContent,
+    t('results.totalInterest') + ': ' + document.getElementById('total-interest').textContent,
+  ];
+
+  const lineHeight = 6;
+  const leftX  = margin;
   const rightX = 110;
 
-  for (const [lLabel, lVal, rLabel, rVal] of rows) {
-    // Left column
-    doc.setFont('DejaVu', 'normal');
-    doc.text(lLabel + ': ', leftX, y);
-    doc.setFont('DejaVu', 'bold');
-    doc.text(lVal, leftX + doc.getTextWidth(lLabel + ': '), y);
-
-    // Right column (if present)
-    if (rLabel) {
-      doc.setFont('DejaVu', 'normal');
-      doc.text(rLabel + ': ', rightX, y);
-      doc.setFont('DejaVu', 'bold');
-      doc.text(rVal, rightX + doc.getTextWidth(rLabel + ': '), y);
-    }
-
-    y += 6;
+  const totalRows = Math.max(leftLines.length, rightLines.length);
+  for (let i = 0; i < totalRows; i++) {
+    if (leftLines[i])  doc.text(leftLines[i],  leftX,  y + i * lineHeight);
+    if (rightLines[i]) doc.text(rightLines[i], rightX, y + i * lineHeight);
   }
-  y += 4;
+
+  y += totalRows * lineHeight + 4;
 
   // ── Table title ──
   doc.setFont('DejaVu', 'bold');
