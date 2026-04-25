@@ -312,34 +312,38 @@ function downloadPDF() {
   doc.line(margin, y + 3, 196, y + 3);
   y += 10;
 
-  // ── Summary: 2 columns ──
-  doc.setFont('DejaVu', 'normal');
+  // ── Summary: exactly matching reference layout ──
   doc.setFontSize(10);
 
-  const col1 = [
-    [t('results.baseMonthly'),  document.getElementById('monthly-payment').textContent],
-    [t('results.withExtra'),    document.getElementById('monthly-with-extra').textContent],
-    [t('results.totalInterest'),document.getElementById('total-interest').textContent],
-  ];
-  const col2 = [
-    [t('results.payoffMonths'), document.getElementById('payoff-months').textContent],
-    [t('results.totalPaid'),    document.getElementById('total-paid').textContent],
+  const rows = [
+    // [left label, left value, right label, right value]
+    // right label/value = null means empty right column
+    [t('results.baseMonthly'),  document.getElementById('monthly-payment').textContent,
+     t('results.payoffMonths'), document.getElementById('payoff-months').textContent],
+    [t('results.withExtra'),    document.getElementById('monthly-with-extra').textContent,
+     t('results.totalPaid'),    document.getElementById('total-paid').textContent],
+    [t('results.totalInterest'),document.getElementById('total-interest').textContent,
+     null, null],
   ];
 
-  const maxRows = Math.max(col1.length, col2.length);
-  for (let i = 0; i < maxRows; i++) {
-    if (col1[i]) {
+  const leftX = margin;
+  const rightX = 110;
+
+  for (const [lLabel, lVal, rLabel, rVal] of rows) {
+    // Left column
+    doc.setFont('DejaVu', 'normal');
+    doc.text(lLabel + ': ', leftX, y);
+    doc.setFont('DejaVu', 'bold');
+    doc.text(lVal, leftX + doc.getTextWidth(lLabel + ': '), y);
+
+    // Right column (if present)
+    if (rLabel) {
       doc.setFont('DejaVu', 'normal');
-      doc.text(col1[i][0] + ': ', margin, y);
+      doc.text(rLabel + ': ', rightX, y);
       doc.setFont('DejaVu', 'bold');
-      doc.text(col1[i][1], margin + doc.getTextWidth(col1[i][0] + ': '), y);
+      doc.text(rVal, rightX + doc.getTextWidth(rLabel + ': '), y);
     }
-    if (col2[i]) {
-      doc.setFont('DejaVu', 'normal');
-      doc.text(col2[i][0] + ': ', 110, y);
-      doc.setFont('DejaVu', 'bold');
-      doc.text(col2[i][1], 110 + doc.getTextWidth(col2[i][0] + ': '), y);
-    }
+
     y += 6;
   }
   y += 4;
