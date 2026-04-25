@@ -287,185 +287,119 @@ function downloadText(filename, text) {
 }
 
 function downloadPDF() {
-  if (!lastSchedule || lastSchedule.length === 0) return;
-  
-  // Check if jsPDF is available
-  if (typeof window.jspdf === 'undefined') {
-    console.error('jsPDF library not loaded');
-    return;
-  }
-  
-  // Get the current language
-  const currentLang = document.documentElement.lang || 'bg';
-  const isEn = currentLang === 'en';
-  
-  // Initialize jsPDF
+  if (!lastSchedule) return;
+
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  
-  // For Bulgarian, use a different approach - create HTML and convert to PDF
-  if (!isEn) {
-    // Create HTML content with proper UTF-8 encoding
-    const htmlContent = `
-      <!DOCTYPE html>
-      <html lang="bg">
-      <head>
-        <meta charset="UTF-8">
-        <title>Погасителен план</title>
-        <style>
-          body { font-family: Arial, sans-serif; margin: 20px; }
-          h1 { text-align: center; font-size: 18pt; }
-          .summary { margin: 20px 0; }
-          .summary-row { display: flex; justify-content: space-between; margin: 5px 0; }
-          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-          th, td { border: 1px solid #ccc; padding: 8px; text-align: right; }
-          th:first-child, td:first-child { text-align: left; }
-          th { background: #f0f0f0; font-weight: bold; }
-        </style>
-      </head>
-      <body>
-        <h1>Погасителен план</h1>
-        <div class="summary">
-          ${(() => {
-            let totalPaid = 0, totalInterest = 0;
-            lastSchedule.forEach(row => {
-              totalPaid += (row.payment || 0);
-              totalInterest += (row.interest || 0);
-            });
-            return `
-              <div class="summary-row">
-                <span>Общо платено:</span>
-                <span>${totalPaid.toFixed(2)}</span>
-              </div>
-              <div class="summary-row">
-                <span>Общо лихва:</span>
-                <span>${totalInterest.toFixed(2)}</span>
-              </div>
-              <div class="summary-row">
-                <span>Срок до изплащане:</span>
-                <span>${lastSchedule.length} месеца</span>
-              </div>
-            `;
-          })()}
-        </div>
-        <table>
-          <thead>
-            <tr>
-              <th>Месец</th>
-              <th>Вноска</th>
-              <th>Лихва</th>
-              <th>Главница</th>
-              <th>Остатък</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${lastSchedule.map(row => `
-              <tr>
-                <td>${row.month}</td>
-                <td>${(row.payment || 0).toFixed(2)}</td>
-                <td>${(row.interest || 0).toFixed(2)}</td>
-                <td>${(row.principal || 0).toFixed(2)}</td>
-                <td>${(row.balance || 0).toFixed(2)}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </body>
-      </html>
-    `;
-    
-    // Create blob and download HTML file
-    const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'pogasnitelen-plan.html';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-    
-    // Show message to user
-    setTimeout(() => {
-      alert('Моля, отворете изтегления HTML файл и използвайте "Print to PDF" или "Save as PDF" в браузъра си, за да запазите като PDF.');
-    }, 100);
-    
-    return;
-  }
-  
-  // English PDF generation (works fine)
-  doc.setFontSize(16);
-  doc.text('Payment Plan', 105, 20, { align: 'center' });
-  
-  // Calculate totals
-  let totalPaid = 0, totalInterest = 0;
-  lastSchedule.forEach(row => {
-    totalPaid += (row.payment || 0);
-    totalInterest += (row.interest || 0);
-  });
-  
-  // Add summary
-  doc.setFontSize(12);
-  const summaryData = [
-    ['Total Paid:', totalPaid.toFixed(2)],
-    ['Total Interest:', totalInterest.toFixed(2)],
-    ['Payoff Months:', `${lastSchedule.length} months`]
-  ];
-  
-  let yPosition = 40;
-  summaryData.forEach(([label, value]) => {
-    doc.text(label, 20, yPosition);
-    doc.text(value, 150, yPosition, { align: 'right' });
-    yPosition += 10;
-  });
-  
-  // Add table
-  yPosition += 10;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+  // Register DejaVu fonts (supports Cyrillic)
+  doc.addFileToVFS('DejaVuSans.ttf', window.DEJAVU_FONT_REGULAR);
+  doc.addFont('DejaVuSans.ttf', 'DejaVu', 'normal');
+  doc.addFileToVFS('DejaVuSans-Bold.ttf', window.DEJAVU_FONT_BOLD);
+  doc.addFont('DejaVuSans-Bold.ttf', 'DejaVu', 'bold');
+
+  const margin = 14;
+  let y = 20;
+
+  // ── Title ──
+  doc.setFont('DejaVu', 'bold');
+  doc.setFontSize(18);
+  doc.text(t('app.title'), margin, y);
+  y += 2;
+
+  // ── Divider ──
+  doc.setLineWidth(0.5);
+  doc.line(margin, y + 3, 196, y + 3);
+  y += 10;
+
+  // ── Summary: 2 columns ──
+  doc.setFont('DejaVu', 'normal');
   doc.setFontSize(10);
-  doc.setFont(undefined, 'bold');
-  
-  const headers = ['Month', 'Payment', 'Interest', 'Principal', 'Balance'];
-  const columnWidths = [30, 35, 35, 35, 35];
-  const startX = 20;
-  
-  headers.forEach((header, index) => {
-    const x = startX + columnWidths.slice(0, index).reduce((a, b) => a + b, 0);
-    doc.text(header, x, yPosition);
-  });
-  
-  yPosition += 7;
-  doc.setFont(undefined, 'normal');
-  
-  lastSchedule.forEach((row) => {
-    if (yPosition > 270) {
-      doc.addPage();
-      yPosition = 20;
-      doc.setFont(undefined, 'bold');
-      headers.forEach((header, headerIndex) => {
-        const x = startX + columnWidths.slice(0, headerIndex).reduce((a, b) => a + b, 0);
-        doc.text(header, x, yPosition);
-      });
-      yPosition += 7;
-      doc.setFont(undefined, 'normal');
+
+  const col1 = [
+    [t('results.baseMonthly'),  document.getElementById('monthly-payment').textContent],
+    [t('results.withExtra'),    document.getElementById('monthly-with-extra').textContent],
+    [t('results.totalInterest'),document.getElementById('total-interest').textContent],
+  ];
+  const col2 = [
+    [t('results.payoffMonths'), document.getElementById('payoff-months').textContent],
+    [t('results.totalPaid'),    document.getElementById('total-paid').textContent],
+  ];
+
+  const maxRows = Math.max(col1.length, col2.length);
+  for (let i = 0; i < maxRows; i++) {
+    if (col1[i]) {
+      doc.setFont('DejaVu', 'normal');
+      doc.text(col1[i][0] + ': ', margin, y);
+      doc.setFont('DejaVu', 'bold');
+      doc.text(col1[i][1], margin + doc.getTextWidth(col1[i][0] + ': '), y);
     }
-    
-    const rowData = [
-      row.month.toString(),
-      (row.payment || 0).toFixed(2),
-      (row.interest || 0).toFixed(2),
-      (row.principal || 0).toFixed(2),
-      (row.balance || 0).toFixed(2)
-    ];
-    
-    rowData.forEach((data, dataIndex) => {
-      const x = startX + columnWidths.slice(0, dataIndex).reduce((a, b) => a + b, 0);
-      doc.text(data, x, yPosition);
-    });
-    
-    yPosition += 7;
+    if (col2[i]) {
+      doc.setFont('DejaVu', 'normal');
+      doc.text(col2[i][0] + ': ', 110, y);
+      doc.setFont('DejaVu', 'bold');
+      doc.text(col2[i][1], 110 + doc.getTextWidth(col2[i][0] + ': '), y);
+    }
+    y += 6;
+  }
+  y += 4;
+
+  // ── Table title ──
+  doc.setFont('DejaVu', 'bold');
+  doc.setFontSize(13);
+  doc.text(t('plan.title'), margin, y);
+  y += 6;
+
+  // ── Payment table ──
+  const head = [[
+    t('plan.col.month'),
+    t('plan.col.payment'),
+    t('plan.col.interest'),
+    t('plan.col.principal'),
+    t('plan.col.balance'),
+  ]];
+
+  const body = lastSchedule.map(r => [
+    String(r.month),
+    formatMoney(r.payment),
+    formatMoney(r.interest),
+    formatMoney(r.principal),
+    formatMoney(r.balance),
+  ]);
+
+  doc.autoTable({
+    head,
+    body,
+    startY: y,
+    styles: {
+      font: 'DejaVu',
+      fontStyle: 'normal',
+      fontSize: 9,
+      cellPadding: 2.5,
+      textColor: [17, 17, 17],
+    },
+    headStyles: {
+      font: 'DejaVu',
+      fontStyle: 'bold',
+      fillColor: [240, 240, 240],
+      textColor: [17, 17, 17],
+      lineWidth: 0,
+      lineColor: [17, 17, 17],
+    },
+    columnStyles: {
+      0: { halign: 'left'  },
+      1: { halign: 'right' },
+      2: { halign: 'right' },
+      3: { halign: 'right' },
+      4: { halign: 'right' },
+    },
+    alternateRowStyles: { fillColor: [250, 250, 250] },
+    showHead: 'everyPage',
   });
-  
-  doc.save('payment-plan.pdf');
+
+  // ── Save ──
+  const filename = t('csv.filename').replace('.csv', '.pdf');
+  doc.save(filename);
 }
 
 function setError(message) {
