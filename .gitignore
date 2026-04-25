@@ -2,6 +2,7 @@
 .DS_Store
 Thumbs.db
 launcher.log
+*.log
 
 # Editors
 .vscode/

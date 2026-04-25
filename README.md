@@ -16,7 +16,7 @@
 
 ```powershell
 .\open.cmd
-```
+``]
 
 ### Вариант B (препоръчително): локален сървър
 
@@ -24,7 +24,7 @@
 
 ```powershell
 python -m http.server 5173
-```
+``]
 
 После отворете `http://localhost:5173`.
 
@@ -37,19 +37,19 @@ python -m http.server 5173
 
 ```powershell
 cmd /k .\start.cmd
-```
+``']
 
 PowerShell може да блокира `.ps1` по подразбиране; това го стартира еднократно без промяна на системна политика:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\start.ps1
-```
+``']
 
 И двата стартера записват лог файл: `launcher.log`.
 
-## Бележки
+## Run locally
 
-- Месечната вноска е по стандартната анюитетна формула.
+## Бележки
 - Последният месец се коригира, за да се занули остатъкът (за да няма разлика от закръгляния).
 
 # loan-calculator
